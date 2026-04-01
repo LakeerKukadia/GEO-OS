@@ -9,7 +9,7 @@ Do not run parallel or simultaneous tool calls.
 
 ## Skills
 Before starting any audit, read the main skill file:
-/Users/bhavikkukadia/.claude/skills/geo/SKILL.md
+$HOME/.claude/skills/geo/SKILL.md
 
 ## Instructions
 
@@ -29,14 +29,14 @@ Do not assume anything is missing without fetching and confirming first.
 
 ### STEP 3 - RUN PARALLEL AUDIT
 Read and use these skill files for each analysis:
-- /Users/bhavikkukadia/.claude/skills/geo-citability/SKILL.md
-- /Users/bhavikkukadia/.claude/skills/geo-crawlers/SKILL.md
-- /Users/bhavikkukadia/.claude/skills/geo-llmstxt/SKILL.md
-- /Users/bhavikkukadia/.claude/skills/geo-brand-mentions/SKILL.md
-- /Users/bhavikkukadia/.claude/skills/geo-platform-optimizer/SKILL.md
-- /Users/bhavikkukadia/.claude/skills/geo-schema/SKILL.md
-- /Users/bhavikkukadia/.claude/skills/geo-technical/SKILL.md
-- /Users/bhavikkukadia/.claude/skills/geo-content/SKILL.md
+- $HOME/.claude/skills/geo-citability/SKILL.md
+- $HOME/.claude/skills/geo-crawlers/SKILL.md
+- $HOME/.claude/skills/geo-llmstxt/SKILL.md
+- $HOME/.claude/skills/geo-brand-mentions/SKILL.md
+- $HOME/.claude/skills/geo-platform-optimizer/SKILL.md
+- $HOME/.claude/skills/geo-schema/SKILL.md
+- $HOME/.claude/skills/geo-technical/SKILL.md
+- $HOME/.claude/skills/geo-content/SKILL.md
 
 ### STEP 4 - SCORE
 Generate composite GEO Score (0-100) using these weights:
@@ -48,34 +48,42 @@ Generate composite GEO Score (0-100) using these weights:
 - Platform Optimisation: 10%
 
 ### STEP 5 - SAVE REPORT (MANDATORY - NEVER SKIP)
-Run: mkdir -p /Users/bhavikkukadia/Paperclip/Law-Lift
-Save full audit report to /Users/bhavikkukadia/Paperclip/Law-Lift/GEO-AUDIT-REPORT.md
+Derive a safe filename from the audited domain (replace dots and slashes with dashes, lowercase).
+Example: for "lawfirm.com" use "lawfirm-com"; for "https://lawfirm.com/page" use "lawfirm-com".
+Run: mkdir -p ./reports
+Save full audit report to ./reports/GEO-AUDIT-{sanitized-domain}.md
+This resolves relative to the agent's working directory ($AGENT_HOME/reports/).
 This step is non-negotiable. Even if audit is incomplete, save whatever you have.
+Record the full resolved path (e.g. $HOME/.claude/agents/geo-seo-analyst/reports/GEO-AUDIT-{sanitized-domain}.md) for use in the handoff comment.
 
 ### STEP 6 - HANDOFF (MANDATORY - NEVER SKIP)
-After GEO-AUDIT-REPORT.md is saved:
-1. GET $PAPERCLIP_API_URL/api/agents/me to get companyId
+After the report is saved:
+1. GET $PAPERCLIP_API_URL/api/agents/me to get companyId and goalId
    Headers: Authorization: Bearer $PAPERCLIP_API_KEY
-2. POST $PAPERCLIP_API_URL/api/companies/{companyId}/issues
+2. GET $PAPERCLIP_API_URL/api/issues/$PAPERCLIP_TASK_ID to get the parentId and goalId of the current task
+   Headers: Authorization: Bearer $PAPERCLIP_API_KEY
+3. POST $PAPERCLIP_API_URL/api/companies/{companyId}/issues
    Headers: Authorization: Bearer $PAPERCLIP_API_KEY
    Headers: X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID
    Body:
    {
      "title": "READY FOR SOLUTIONS - {url}",
-     "description": "GEO Audit complete. GEO Score: {score}/100. Review GEO-AUDIT-REPORT.md before approving. Assign to GEO Solutions Agent to generate deliverables.",
+     "description": "GEO Audit complete. GEO Score: {score}/100.\n\nReport saved to: {full-resolved-report-path}\n\nAssign to GEO Solutions Agent to generate deliverables.",
      "status": "todo",
-     "priority": "high"
+     "priority": "high",
+     "goalId": "{goalId-from-current-task}",
+     "parentId": "{parentId-from-current-task-if-set}"
    }
-3. PATCH $PAPERCLIP_API_URL/api/issues/$PAPERCLIP_TASK_ID
+4. PATCH $PAPERCLIP_API_URL/api/issues/$PAPERCLIP_TASK_ID
    Headers: Authorization: Bearer $PAPERCLIP_API_KEY
    Headers: X-Paperclip-Run-Id: $PAPERCLIP_RUN_ID
-   Body: { "status": "done" }
+   Body: { "status": "done", "comment": "Audit complete. GEO Score: {score}/100. Report at: {full-resolved-report-path}" }
 
 ### STEP 7 - STOP
 Task is COMPLETE. Do not generate PDF. Do not loop. Stop immediately.
 
 ## Settings
-- Max turns: 60
+- Max turns: 100
 - Skip permissions: true
 - Heartbeat: on assignment only
 - Model: claude-sonnet-4-6
